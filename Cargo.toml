@@ -1,0 +1,38 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask", "tests/netns"]
+# `narrows-ebpf` is left out of a plain `cargo build`. Its real build targets
+# `bpfel-unknown-none` via `cargo xtask`. `--workspace` still includes it, and on
+# the host it compiles to an empty stub binary.
+default-members = [
+    "crates/narrows-agent",
+    "crates/narrows-cni",
+    "crates/narrows-common",
+    "crates/narrows-tui",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+publish = false
+license = "Apache-2.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libc = "0.2"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+dbg_macro = "deny"
+todo = "warn"

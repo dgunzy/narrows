@@ -1,0 +1,39 @@
+# kind cluster for developing Narrows (PLAN §12, Phase 0).
+#
+#   kind create cluster --config deploy/kind/narrows.yaml
+#
+# The cluster name makes the kubectl context `kind-narrows`, which is the only
+# context agents may use (AGENTS.md §1.3).
+#
+# Nodes stay NotReady until a CNI is installed. That's expected: this config
+# disables kindnet so Narrows can take its place.
+#
+# All kind "nodes" are containers sharing one kernel: the Docker Desktop VM on
+# macOS. eBPF pin paths, program names, and global sysctls are shared across
+# nodes, so namespace them by node name (PLAN §12, §14.4).
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: narrows
+networking:
+  # No kindnet. The runtime finds no CNI config until Narrows installs one.
+  disableDefaultCNI: true
+  # kube-proxy keeps owning Service VIPs, in nftables mode (PLAN §2.3, ADR-6).
+  # nftables is GA since Kubernetes 1.33, but iptables is still the default.
+  # kind also sets tcp_be_liberal in this mode (PLAN §14.5).
+  kubeProxyMode: "nftables"
+  # The kind default, written out because the controller-manager carves
+  # per-node Node.spec.podCIDRs from it, and that's Narrows' IPAM pool
+  # (PLAN §5.3).
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/16"
+nodes:
+  # Pinned by digest to the default image for kind v0.30.0 (Kubernetes 1.34.0),
+  # so every run gets the same node image. When upgrading kind, take the new
+  # digest from that release's notes. Images built for other kind versions
+  # may not work.
+  - role: control-plane
+    image: kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a
+  - role: worker
+    image: kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a
+  - role: worker
+    image: kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a
